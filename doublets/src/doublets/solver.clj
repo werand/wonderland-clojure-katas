@@ -27,32 +27,40 @@
   [word1 word2]
   (reduce + (map char-diff word1 word2)))
 
-;; Find the next word the words are filtered to just contain words which
-;; have only one different character
+;; To find the next word from a list of words, the words are filtered to just
+;; contain words which have only one different character
 (defn- filter-words-with-diff-1
   [word words]
   (filter #(= 1 (word-diff word %)) words))
 
+(defn leaves
+  "Given a tree of solutions, return the solutions as a list."
+  [coll]
+  (when-let [s (seq coll)]
+    (if (some sequential? s)
+      (mapcat leaves coll)
+      (list coll))))
+
 (defn doublets
-  ;; Find the doublets by first checking that the passed words have equal
-  ;; length. If equal the possible words are looked up by filtering the words
-  ;; with correct length and only one difference to limit the search space.
+  ;; The possible-next-words are used to search the paths from word1 to word2 to
+  ;; build up the result. Since more than one word may be found with only
+  ;; one difference all possible paths are calucated - resulting in a tree
+  ;; of solutions.
+  ([result possible-next-words word1 word2]
+     (let [words-with-diff-1 (filter-words-with-diff-1 word1 possible-next-words)]
+       (if (seq words-with-diff-1)
+         (map #(if-not (= % word2)
+                    (doublets (conj result %) (disj possible-next-words %) % word2)
+                    (conj result word2))
+              words-with-diff-1)
+         [])))
+  ;; Find the doublets by first checking that word1 and word2 have equal
+  ;; length. If equal in length the possible words are looked up by filtering
+  ;; the words - using only words with correct length for further computation.
+  ;; All word paths are computed, the longest path is returned.
   ([word1 word2]
      (if (= (count word1) (count word2))
-       (let [possible-words (filter-words-by-length words (count word1))
-             possible-words (disj possible-words word1)]
-         (doublets [word1] possible-words word1 word2))
-       []))
-  ;; These possible-words are used to search the path from word1 to word2 and
-  ;; build up the result. Since more than one word may be found with only
-  ;; one difference all paths are mapcat'ed together by recursively calling
-  ;; the function again, conj the new word to the result and reducing the
-  ;; search space.
-  ([result possible-words word1 word2]
-     (let [found-words (filter-words-with-diff-1 word1 possible-words)]
-       (if (seq found-words)
-         (mapcat #(if-not (= % word2)
-                    (doublets (conj result %) (disj possible-words %) % word2)
-                    (conj result word2))
-                 found-words)
-         []))))
+       (let [possible-next-words (disj (filter-words-by-length words (count word1)) word1)
+             doublet-result-tree (doublets [word1] possible-next-words word1 word2)]
+         (first (sort-by count > (leaves doublet-result-tree))))
+       [])))

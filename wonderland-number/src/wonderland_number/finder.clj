@@ -5,11 +5,11 @@
 
 (defn n-of-k
   "Creates a list of all possible ways to take n elements from a list s"
-  ([n s] (n-of-k n s []))
-  ([n s acc]
+  ([n s] (n-of-k n [] s))
+  ([n acc s]
      (if (> n 0)
        (when (seq s)
-         (mapcat (fn [x] (n-of-k (dec n) (remove #(= x %) s) (cons x acc))) s))
+         (mapcat (fn [x] (n-of-k (dec n) (cons x acc) (remove #(= x %) s))) s))
        [acc])))
 
 (def power-of-tens (cons 1 (iterate #(* 10 %) 10)))
@@ -35,13 +35,18 @@
        (= (set s))))
 
 (defn wonderland-number []
-  (to-number
-   (first
-    (->>
-     digits
-     (n-of-k magic-number-digits-count)
-     (filter (partial seq-multiplied-contains-same-digits? 6))
-     (filter (partial seq-multiplied-contains-same-digits? 5))
-     (filter (partial seq-multiplied-contains-same-digits? 4))
-     (filter (partial seq-multiplied-contains-same-digits? 3))
-     (filter (partial seq-multiplied-contains-same-digits? 2))))))
+  (time (to-number
+         (first
+          (->>
+           digits
+           ;; The search space can be reduced by knowing that the higest power of 10 must be
+           ;; the digit 1 since, (int (/ 1000000 6)) => 166666, it could be further optimized
+           ;; but alone this optimization limits the search space considerably from 151200
+           ;; possibilites to 15120
+           (remove #(= 1 %))
+           (n-of-k (dec magic-number-digits-count) [1])
+           (filter (partial seq-multiplied-contains-same-digits? 6))
+           (filter (partial seq-multiplied-contains-same-digits? 5))
+           (filter (partial seq-multiplied-contains-same-digits? 4))
+           (filter (partial seq-multiplied-contains-same-digits? 3))
+           (filter (partial seq-multiplied-contains-same-digits? 2)))))))

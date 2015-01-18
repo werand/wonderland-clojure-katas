@@ -40,9 +40,8 @@
           (->>
            digits
            ;; The search space can be reduced by knowing that the higest power of 10 must be
-           ;; the digit 1 since, (int (/ 1000000 6)) => 166666, it could be further optimized
-           ;; but alone this optimization limits the search space considerably from 151200
-           ;; possibilites to 15120
+           ;; the digit 1 since, (int (/ 1000000 6)) => 166666. It could be further optimized
+           ;; but alone this optimization limits the search space by a factor of 10
            (remove #(= 1 %))
            (n-of-k (dec magic-number-digits-count) [1])
            (filter (partial seq-multiplied-contains-same-digits? 6))

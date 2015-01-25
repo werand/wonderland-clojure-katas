@@ -15,14 +15,13 @@
 
 (def find-end (partial find-position :E))
 
-(def north [-1 0])
-(def south [1 0])
-(def east [0 -1])
-(def west [0 1])
-
 (defn next-positions
   [pos]
-  (map #(map + pos %) [north south east west]))
+  (let [north [-1 0]
+        south [1 0]
+        east [0 -1]
+        west [0 1]]
+    (map #(map + pos %) [west south east north])))
 
 (defn wall?
   [maze pos]
@@ -45,12 +44,16 @@
   ([maze]
      (let [start-pos (find-start maze)
            end-pos (find-end maze)
-           solution (solve-maze maze end-pos start-pos [] #{})]
-       (when (seq solution)
-         (draw-path maze (cons end-pos solution)))))
+           solutions (solve-maze maze end-pos start-pos [] #{})]
+       (when (seq solutions)
+        (->> solutions
+              (sort-by count)
+              first
+              (cons end-pos)
+              (draw-path maze)))))
   ([maze end-pos pos path visited]
      (when-not (contains? visited pos)
        (let [next-pos (filter-possible-directions maze (next-positions pos))]
          (if-not (some #{end-pos} next-pos)
            (mapcat #(solve-maze maze end-pos % (cons pos path) (conj visited pos)) next-pos)
-           (cons pos path))))))
+           [(cons pos path)])))))

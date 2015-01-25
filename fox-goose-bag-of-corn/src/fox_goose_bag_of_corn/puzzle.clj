@@ -67,5 +67,8 @@
   (->> start-pos
        first
        find-solution
+       (sort-by count)
        first
-       reverse))
+       reverse
+       ;; initially the boat is empty therefore the start is twice in the list
+       rest))
